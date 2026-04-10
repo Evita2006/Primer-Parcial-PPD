@@ -1,0 +1,66 @@
+import threading
+import queue
+import time
+import random
+
+# Configuración del sistema
+MAX_BUFFER = 50  # Capacidad máxima de la cola para no saturar la RAM
+cola_imagenes = queue.Queue(maxsize=MAX_BUFFER)
+
+def recepcion_satelite():
+    """
+    Simula la llegada impredecible de imágenes (Productor).
+    """
+    id_imagen = 1
+    while True:
+        # Simula llegada aleatoria 
+        tiempo_llegada = random.uniform(0.1, 2.0)
+        time.sleep(tiempo_llegada)
+        
+        imagen = f"Imagen_SAT_{id_imagen}"
+        
+        try:
+            # Pone la imagen en la cola. Si está llena, espera.
+            cola_imagenes.put(imagen, timeout=5)
+            print(f"[RECEPCIÓN] {imagen} recibida y almacenada.")
+            id_imagen += 1
+        except queue.Full:
+            print(f"[ALERTA] Sistema saturado. No se pudo almacenar {imagen}")
+
+def procesamiento_analistas():
+    """
+    Simula el trabajo complejo de los analistas automáticos (Consumidor).
+    """
+    while True:
+        # Extrae la imagen de la cola (espera si está vacía)
+        imagen = cola_imagenes.get()
+        
+        print(f"[PROCESO] Procesando {imagen} (esto tomará tiempo)...")
+        
+        # Simula un cálculo complejo y lento
+        tiempo_proceso = random.uniform(2.0, 5.0)
+        time.sleep(tiempo_proceso)
+        
+        print(f"[PROCESO] {imagen} terminada. Pendientes en cola: {cola_imagenes.qsize()}")
+        
+        # Indica que la tarea de la cola ha finalizado
+        cola_imagenes.task_done()
+
+# --- INICIO DEL SISTEMA ---
+if __name__ == "__main__":
+    print("--- Iniciando Centro de Procesamiento Digital ---")
+    
+    # Creamos los hilos para el trabajo concurrente
+    hilo_recepcion = threading.Thread(target=recepcion_satelite, daemon=True)
+    hilo_proceso = threading.Thread(target=procesamiento_analistas, daemon=True)
+    
+    # Iniciamos las tareas independientes
+    hilo_recepcion.start()
+    hilo_proceso.start()
+    
+    # Mantenemos el programa principal vivo
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n--- Apagando sistema de procesamiento ---")
